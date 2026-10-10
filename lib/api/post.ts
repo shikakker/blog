@@ -1,4 +1,5 @@
 import prisma from "@/lib/prisma";
+import { canMutateOwnedResource } from "@/lib/ownership-policy.mjs";
 
 import type { NextApiRequest, NextApiResponse } from "next";
 import type { Post, Site } from ".prisma/client";
@@ -103,7 +104,8 @@ export async function getPost(
  */
 export async function createPost(
   req: NextApiRequest,
-  res: NextApiResponse
+  res: NextApiResponse,
+  session: Session
 ): Promise<void | NextApiResponse<{
   postId: string;
 }>> {
@@ -114,7 +116,18 @@ export async function createPost(
       .status(400)
       .end("Bad request. siteId parameter cannot be an array.");
 
+  if (!session.user.id) return res.status(401).end("Unauthorized");
+
   try {
+    const ownedSite = await prisma.site.findUnique({
+      where: { id: siteId },
+      select: { userId: true },
+    });
+
+    if (!ownedSite || !canMutateOwnedResource({ actorUserId: session.user.id, ownerUserId: ownedSite.userId })) {
+      return res.status(403).end("Forbidden");
+    }
+
     const response = await prisma.post.create({
       data: {
         image: `/placeholder.png`,
@@ -148,7 +161,8 @@ export async function createPost(
  */
 export async function deletePost(
   req: NextApiRequest,
-  res: NextApiResponse
+  res: NextApiResponse,
+  session: Session
 ): Promise<void | NextApiResponse> {
   const { postId } = req.query;
 
@@ -157,7 +171,18 @@ export async function deletePost(
       .status(400)
       .end("Bad request. postId parameter cannot be an array.");
 
+  if (!session.user.id) return res.status(401).end("Unauthorized");
+
   try {
+    const ownedPost = await prisma.post.findUnique({
+      where: { id: postId },
+      select: { site: { select: { userId: true } } },
+    });
+
+    if (!ownedPost || !canMutateOwnedResource({ actorUserId: session.user.id, ownerUserId: ownedPost.site?.userId })) {
+      return res.status(403).end("Forbidden");
+    }
+
     const response = await prisma.post.delete({
       where: {
         id: postId,
@@ -210,7 +235,8 @@ export async function deletePost(
  */
 export async function updatePost(
   req: NextApiRequest,
-  res: NextApiResponse
+  res: NextApiResponse,
+  session: Session
 ): Promise<void | NextApiResponse<Post>> {
   const {
     id,
@@ -225,7 +251,18 @@ export async function updatePost(
     customDomain,
   } = req.body;
 
+  if (!session.user.id) return res.status(401).end("Unauthorized");
+
   try {
+    const ownedPost = await prisma.post.findUnique({
+      where: { id },
+      select: { site: { select: { userId: true } } },
+    });
+
+    if (!ownedPost || !canMutateOwnedResource({ actorUserId: session.user.id, ownerUserId: ownedPost.site?.userId })) {
+      return res.status(403).end("Forbidden");
+    }
+
     const post = await prisma.post.update({
       where: {
         id: id,
