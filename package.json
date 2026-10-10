@@ -11,7 +11,8 @@
     "prisma:migrate": "prisma migrate deploy",
     "start": "next start",
     "type-check": "tsc",
-    "test:regression": "node --test tests/*.test.mjs"
+    "test:regression": "node --test tests/*.test.mjs",
+    "typecheck": "tsc --noEmit"
   },
   "engines": {
     "node": ">=14.0.0"
