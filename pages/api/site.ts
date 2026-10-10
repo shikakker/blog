@@ -14,11 +14,11 @@ export default async function site(req: NextApiRequest, res: NextApiResponse) {
     case HttpMethod.GET:
       return getSite(req, res, session);
     case HttpMethod.POST:
-      return createSite(req, res);
+      return createSite(req, res, session);
     case HttpMethod.DELETE:
-      return deleteSite(req, res);
+      return deleteSite(req, res, session);
     case HttpMethod.PUT:
-      return updateSite(req, res);
+      return updateSite(req, res, session);
     default:
       res.setHeader("Allow", [
         HttpMethod.GET,
