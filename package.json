@@ -10,7 +10,8 @@
     "predev": "prisma generate",
     "prisma:migrate": "prisma migrate deploy",
     "start": "next start",
-    "type-check": "tsc"
+    "type-check": "tsc",
+    "test:regression": "node --test tests/*.test.mjs"
   },
   "engines": {
     "node": ">=14.0.0"
